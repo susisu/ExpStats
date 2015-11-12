@@ -1,0 +1,115 @@
+#!/usr/bin/env node
+
+/*
+ * ExpStats bin/est
+ * copyright (c) 2015 Susisu
+ */
+
+"use strict";
+
+var fs = require("fs");
+
+var program = require("commander");
+
+var expstats = require("../index.js");
+
+var packageInfo = require("../package.json");
+
+process.title = "est";
+
+program.version(packageInfo["version"], "-v, --version");
+
+program.option("-s, --stdin", "load data from standard input");
+
+program
+    .arguments("<file> [expressions...]")
+    .action(function (file, exprs) {
+        if (program["stdin"]) {
+            var buffer = "";
+            process.stdin.on("readable", function () {
+                var chunk = process.stdin.read();
+                if (chunk !== null) {
+                    buffer += chunk;
+                }
+            });
+            process.stdin.on("end", function () {
+                execute(buffer, [file].concat(exprs));
+            });
+            return;
+        }
+        fs.readFile(file, { "encoding": "utf8" }, function (err, input) {
+            if (err) {
+                console.error(String(err));
+                process.exit(1);
+                return;
+            }
+            execute(input, exprs);
+        });
+    });
+
+program.parse(process.argv);
+
+if (program.args.length === 0) {
+    program.help();
+}
+
+function execute(input, srcs) {
+    var mat = expstats.data.matrix.transpose(
+        expstats.data.matrix.parse(input, 0)
+    );
+
+    var expr;
+    try {
+        expr = new expstats.exprs.exprs.Vector(
+            undefined,
+            srcs.map(function (src, index) {
+                return expstats.exprs.parser.parse(index.toString(), src);
+            })
+        );
+    }
+    catch (error) {
+        console.error(error.toString());
+        process.exit(1);
+        return;
+    }
+
+    var env = Object.create(expstats.exprs.prelude);
+    env["$"] = mat;
+    for (var i = 0; i < mat.length; i++) {
+        env["$" + i.toString()] = mat[i];
+    }
+
+    var _expr = expr.init(env, []);
+
+    var res;
+    try {
+        res = _expr.eval();
+    }
+    catch (exception) {
+        console.error(exception.toString());
+        process.exit(1);
+        return;
+    } 
+
+    var rank = expstats.data.tensor.rank(res);
+    var output;
+    switch (rank) {
+        case 0:
+            output = res.toString();
+            break;
+        case 1:
+            output = res.map(function (elem) {
+                return elem.toString();
+            }).join("\n");
+            break;
+        case 2:
+            output = expstats.data.matrix.matrixToString(res);
+            break;
+        default:
+            console.error("Error: invalid output");
+            process.exit(1);
+            return;
+    }
+    console.log(output);
+    process.exit(0);
+}
