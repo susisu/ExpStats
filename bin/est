@@ -89,7 +89,7 @@ function execute(input, srcs) {
         console.error(exception.toString());
         process.exit(1);
         return;
-    } 
+    }
 
     var rank = expstats.data.tensor.rank(res);
     var output;
@@ -101,7 +101,7 @@ function execute(input, srcs) {
             case 1:
                 output = res.map(function (elem) {
                     return elem.toString();
-                }).join("\n");
+                }).join("\t");
                 break;
             case 2:
                 if (!expstats.data.matrix.validate(res)) {
