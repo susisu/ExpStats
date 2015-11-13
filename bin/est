@@ -122,6 +122,17 @@ function execute(input, srcs) {
                     "\t"
                 );
                 break;
+            case 3:
+                if (res.length === 1) {
+                    if (!expstats.data.matrix.validate(res[0])) {
+                        throw new Error("error: invalid matrix");
+                    }
+                    output = expstats.data.matrix.matrixToString(
+                        expstats.data.matrix.transpose(res[0]),
+                        "\t"
+                    );
+                    break;
+                }
             default:
                 throw new Error("error: invalid output");
         }
