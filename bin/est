@@ -96,16 +96,26 @@ function execute(input, srcs) {
     try {
         switch (rank) {
             case 0:
-                output = res.toString();
+                if (typeof res === "number") {
+                    output = res.toString();
+                }
+                else {
+                    throw new Error("type error: not a number");
+                }
                 break;
             case 1:
                 output = res.map(function (elem) {
-                    return elem.toString();
+                    if (typeof elem === "number") {
+                        return elem.toString();
+                    }
+                    else {
+                        throw new Error("type error: not a number");
+                    }
                 }).join("\t");
                 break;
             case 2:
                 if (!expstats.data.matrix.validate(res)) {
-                    throw new Error("invalid matrix");
+                    throw new Error("error: invalid matrix");
                 }
                 output = expstats.data.matrix.matrixToString(
                     expstats.data.matrix.transpose(res),
@@ -113,13 +123,11 @@ function execute(input, srcs) {
                 );
                 break;
             default:
-                console.error("Error: invalid output");
-                process.exit(1);
-                return;
+                throw new Error("error: invalid output");
         }
     }
     catch (error) {
-        console.error(error.toString());
+        console.error(error.message);
         process.exit(1);
         return;
     }
