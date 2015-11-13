@@ -20,6 +20,7 @@ process.title = "est";
 program.version(packageInfo["version"], "-v, --version");
 
 program.option("-s, --stdin", "load data from standard input");
+program.option("-e, --exp", "output numbers in exponential notation");
 
 program
     .arguments("<file> [expressions...]")
@@ -33,7 +34,7 @@ program
                 }
             });
             process.stdin.on("end", function () {
-                execute(buffer, [file].concat(exprs));
+                execute(buffer, [file].concat(exprs), program.exp);
             });
             return;
         }
@@ -43,7 +44,7 @@ program
                 process.exit(1);
                 return;
             }
-            execute(input, exprs);
+            execute(input, exprs, program.exp);
         });
     });
 
@@ -53,7 +54,7 @@ if (program.args.length === 0) {
     program.help();
 }
 
-function execute(input, srcs) {
+function execute(input, srcs, exponential) {
     var mat = expstats.data.matrix.transpose(
         expstats.data.matrix.parse(input, 0)
     );
@@ -97,7 +98,12 @@ function execute(input, srcs) {
         switch (rank) {
             case 0:
                 if (typeof res === "number") {
-                    output = res.toString();
+                    if (exponential) {
+                        output = res.toExponential();
+                    }
+                    else {
+                        output = res.toString();
+                    }
                 }
                 else {
                     throw new Error("type error: not a number");
@@ -106,7 +112,12 @@ function execute(input, srcs) {
             case 1:
                 output = res.map(function (elem) {
                     if (typeof elem === "number") {
-                        return elem.toString();
+                        if (exponential) {
+                            return elem.toExponential();
+                        }
+                        else {
+                            return elem.toString();
+                        }
                     }
                     else {
                         throw new Error("type error: not a number");
@@ -119,7 +130,8 @@ function execute(input, srcs) {
                 }
                 output = expstats.data.matrix.matrixToString(
                     expstats.data.matrix.transpose(res),
-                    "\t"
+                    "\t",
+                    exponential
                 );
                 break;
             case 3:
@@ -129,7 +141,8 @@ function execute(input, srcs) {
                     }
                     output = expstats.data.matrix.matrixToString(
                         expstats.data.matrix.transpose(res[0]),
-                        "\t"
+                        "\t",
+                        exponential
                     );
                     break;
                 }
